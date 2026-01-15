@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "707695275765",
+    "project_id": "video-player-app-e31b0",
+    "storage_bucket": "video-player-app-e31b0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:707695275765:android:b970c8433445fb440e5fbc",
+        "android_client_info": {
+          "package_name": "com.raywenderlich.videoplayerapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSXgg3UX8S8Cp1NrMizGcYWuOIAj2Upbo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
