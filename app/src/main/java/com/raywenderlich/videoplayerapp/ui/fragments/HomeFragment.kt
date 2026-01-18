@@ -1,18 +1,19 @@
 package com.raywenderlich.videoplayerapp.ui.fragments
 
-//import kotlin.jvm.java
-
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.raywenderlich.videoplayerapp.adapter.CategoryAdapter
 import com.raywenderlich.videoplayerapp.adapter.VideoAdapter
 import com.raywenderlich.videoplayerapp.databinding.FragmentHomeBinding
 import com.raywenderlich.videoplayerapp.model.Video
+import com.raywenderlich.videoplayerapp.repository.VideoRepository
 import com.raywenderlich.videoplayerapp.ui.VideoPlayerActivity
 
 class HomeFragment : Fragment() {
@@ -22,6 +23,7 @@ class HomeFragment : Fragment() {
 
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var videoAdapter: VideoAdapter
+    private val videoRepository = VideoRepository()
 
     private val categories = listOf("All", "Music", "Gaming", "News", "Sports", "Education")
     private var allVideos = listOf<Video>()
@@ -41,7 +43,7 @@ class HomeFragment : Fragment() {
 
         setupCategoryRecyclerView()
         setupVideoRecyclerView()
-        loadSampleVideos()
+        loadVideosFromFirebase()
     }
 
     private fun setupCategoryRecyclerView() {
@@ -67,67 +69,37 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun loadSampleVideos() {
-        // Sample data - Replace with Firebase data later
-        allVideos = listOf(
-            Video(
-                id = "1",
-                title = "Amazing Sunset Timelapse",
-                description = "Beautiful sunset captured in 4K",
-                videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-                thumbnailUrl = "https://picsum.photos/400/300",
-                category = "All",
-                channelName = "Nature Channel",
-                views = "1.2M views",
-                uploadTime = "2 days ago"
-            ),
-            Video(
-                id = "2",
-                title = "Epic Gaming Moments",
-                description = "Best gaming highlights",
-                videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-                thumbnailUrl = "https://picsum.photos/401/300",
-                category = "Gaming",
-                channelName = "Game Master",
-                views = "850K views",
-                uploadTime = "5 days ago"
-            ),
-            Video(
-                id = "3",
-                title = "Relaxing Music for Study",
-                description = "2 hours of peaceful music",
-                videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-                thumbnailUrl = "https://picsum.photos/402/300",
-                category = "Music",
-                channelName = "Music Vibes",
-                views = "3.5M views",
-                uploadTime = "1 week ago"
-            ),
-            Video(
-                id = "4",
-                title = "Breaking News Today",
-                description = "Latest news updates",
-                videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-                thumbnailUrl = "https://picsum.photos/403/300",
-                category = "News",
-                channelName = "News Network",
-                views = "2.1M views",
-                uploadTime = "3 hours ago"
-            ),
-            Video(
-                id = "5",
-                title = "Football Highlights",
-                description = "Best goals of the season",
-                videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-                thumbnailUrl = "https://picsum.photos/404/300",
-                category = "Sports",
-                channelName = "Sports Hub",
-                views = "4.5M views",
-                uploadTime = "1 day ago"
-            )
-        )
+    private fun loadVideosFromFirebase() {
+        // Show loading
+        binding.progressBar.isVisible = true
 
-        videoAdapter.updateVideos(allVideos)
+        videoRepository.getAllVideos(
+            onSuccess = { videos ->
+                // Hide loading
+                binding.progressBar.isVisible = false
+
+                allVideos = videos
+                videoAdapter.updateVideos(allVideos)
+
+                if (videos.isEmpty()) {
+                    Toast.makeText(
+                        requireContext(),
+                        "No videos found. Please add videos to Firebase.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            },
+            onFailure = { errorMessage ->
+                // Hide loading
+                binding.progressBar.isVisible = false
+
+                Toast.makeText(
+                    requireContext(),
+                    "Error: $errorMessage",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        )
     }
 
     private fun filterVideos(category: String) {

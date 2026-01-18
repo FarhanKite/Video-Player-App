@@ -56,16 +56,8 @@ class VideoAdapter(
 
             popup.setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
-                    R.id.menu_share -> {
-                        Toast.makeText(view.context, "Share: ${video.title}", Toast.LENGTH_SHORT).show()
-                        true
-                    }
-                    R.id.menu_not_interested -> {
-                        Toast.makeText(view.context, "Not interested", Toast.LENGTH_SHORT).show()
-                        true
-                    }
-                    R.id.menu_report -> {
-                        Toast.makeText(view.context, "Report: ${video.title}", Toast.LENGTH_SHORT).show()
+                    R.id.menu_subscribe -> {
+                        Toast.makeText(view.context, "Subscribed to: ${video.channelName}", Toast.LENGTH_SHORT).show()
                         true
                     }
                     else -> false
