@@ -26,7 +26,8 @@ class VideoAdapter(
 
         fun bind(video: Video) {
             tvTitle.text = video.title
-            tvDescription.text = "${video.channelName} • ${video.views} • ${video.uploadTime}"
+            // \u2022 = •
+            tvDescription.text = "${video.channelName} \u2022 ${video.views} \u2022 ${video.uploadTime}"
 
             // Load thumbnail using Glide
             Glide.with(itemView.context)
