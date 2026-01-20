@@ -93,4 +93,9 @@ dependencies {
     // TODO: Add the dependencies for any other Firebase products you want to use
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
+
+    // for vector drawable
+    implementation("androidx.vectordrawable:vectordrawable:1.2.0")
+    implementation("androidx.vectordrawable:vectordrawable-animated:1.2.0")
+    implementation("androidx.vectordrawable:vectordrawable-seekable:1.0.0")
 }
