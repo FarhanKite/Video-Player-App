@@ -24,7 +24,7 @@ class ShortVideoFragment : Fragment() {
 
     private var player: ExoPlayer? = null
     private var isPlaying = false
-    private var isMuted = true
+    private var isMuted = false
 
     override fun onCreateView(
         inflater: LayoutInflater,

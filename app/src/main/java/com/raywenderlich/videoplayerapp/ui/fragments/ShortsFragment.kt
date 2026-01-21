@@ -7,6 +7,8 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.animation.Positioning
 import com.raywenderlich.videoplayerapp.adapter.ShortsAdapter
 import com.raywenderlich.videoplayerapp.databinding.FragmentShortsBinding
 import com.raywenderlich.videoplayerapp.model.Short
@@ -17,8 +19,8 @@ class ShortsFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var shortsAdapter: ShortsAdapter
-
     private var shortsList = listOf<Short>()
+    private var currentPosition = 0
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -41,6 +43,33 @@ class ShortsFragment : Fragment() {
         binding.vpShorts.adapter = shortsAdapter
 
         binding.vpShorts.offscreenPageLimit = 1
+
+        binding.vpShorts.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                super.onPageSelected(position)
+
+                pauseVideoAtPosition(currentPosition)
+
+                playVideoAtPosition(position)
+
+                currentPosition = position
+            }
+        })
+    }
+
+    private fun playVideoAtPosition(position: Int) {
+        val fragment = getFragmentAtPosition(position)
+        fragment?.playVideo()
+    }
+
+    private fun pauseVideoAtPosition(position: Int) {
+        val fragment = getFragmentAtPosition(position)
+        fragment?.pauseVideo()
+    }
+
+    private fun getFragmentAtPosition(position: Int) : ShortVideoFragment? {
+        val fragmentTag = "f$position"
+        return childFragmentManager.findFragmentByTag(fragmentTag) as? ShortVideoFragment
     }
 
     private fun loadSampleShorts() {
@@ -135,7 +164,21 @@ class ShortsFragment : Fragment() {
 
         if(shortsList.isEmpty()) {
             Toast.makeText(requireContext(), "No shorts available", Toast.LENGTH_SHORT).show()
+        } else {
+            binding.vpShorts.post {
+                playVideoAtPosition(0)
+            }
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        pauseVideoAtPosition(currentPosition)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        playVideoAtPosition(currentPosition)
     }
 
     override fun onDestroyView() {
