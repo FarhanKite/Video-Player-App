@@ -6,8 +6,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.content.ContentProviderCompat.requireContext
+import androidx.core.content.ContextCompat.startActivity
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.raywenderlich.videoplayerapp.adapter.CategoryAdapter
 import com.raywenderlich.videoplayerapp.adapter.VideoAdapter
@@ -15,11 +18,14 @@ import com.raywenderlich.videoplayerapp.databinding.FragmentHomeBinding
 import com.raywenderlich.videoplayerapp.model.Video
 import com.raywenderlich.videoplayerapp.repository.VideoRepository
 import com.raywenderlich.videoplayerapp.ui.VideoPlayerActivity
+import com.raywenderlich.videoplayerapp.viewmodel.SubscriptionViewModel
 
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
+
+    private val subscriptionViewModel: SubscriptionViewModel by activityViewModels()
 
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var videoAdapter: VideoAdapter
@@ -59,9 +65,13 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupVideoRecyclerView() {
-        videoAdapter = VideoAdapter(emptyList()) { video ->
-            openVideoPlayer(video)
-        }
+        videoAdapter = VideoAdapter(
+            emptyList(),
+            { video ->
+                openVideoPlayer(video)
+            },
+            subscriptionViewModel
+        )
 
         binding.rvVideos.apply {
             layoutManager = LinearLayoutManager(context)

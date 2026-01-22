@@ -8,45 +8,45 @@ import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewbinding.ViewBinding
 import com.bumptech.glide.Glide
 import com.raywenderlich.videoplayerapp.R
+import com.raywenderlich.videoplayerapp.databinding.ItemVideoBinding
 import com.raywenderlich.videoplayerapp.model.Video
+import com.raywenderlich.videoplayerapp.ui.fragments.SubscriptionFragment
+import com.raywenderlich.videoplayerapp.viewmodel.SubscriptionViewModel
 
 class VideoAdapter(
     private var videos: List<Video>,
-    private val onVideoClick: (Video) -> Unit
+    private val onVideoClick: (Video) -> Unit,
+    private val subscriptionViewModel: SubscriptionViewModel
 ) : RecyclerView.Adapter<VideoAdapter.VideoViewHolder>() {
 
-    inner class VideoViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        private val ivThumbnail: ImageView = view.findViewById(R.id.iv_thumbnail)
-        private val ivChannelAvatar: ImageView = view.findViewById(R.id.iv_channel_avatar)
-        private val tvTitle: TextView = view.findViewById(R.id.tv_title)
-        private val tvDescription: TextView = view.findViewById(R.id.tv_description)
-        private val ivMoreOptions: ImageView = view.findViewById(R.id.iv_more_options)
+    inner class VideoViewHolder(private val binding: ItemVideoBinding) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(video: Video) {
-            tvTitle.text = video.title
+            binding.tvTitle.text = video.title
             // \u2022 = •
-            tvDescription.text = "${video.channelName} \u2022 ${video.views} \u2022 ${video.uploadTime}"
+            binding.tvDescription.text = "${video.channelName} \u2022 ${video.views} \u2022 ${video.uploadTime}"
 
             // Load thumbnail using Glide
-            Glide.with(itemView.context)
+            Glide.with(binding.root.context)
                 .load(video.thumbnailUrl)
                 .placeholder(R.color.surface)
-                .into(ivThumbnail)
+                .into(binding.ivThumbnail)
 
             // Video click listener
-            itemView.setOnClickListener {
+            binding.root.setOnClickListener {
                 onVideoClick(video)
             }
 
             // Thumbnail click listener
-            ivThumbnail.setOnClickListener {
+            binding.ivThumbnail.setOnClickListener {
                 onVideoClick(video)
             }
 
             // Three dot menu click listener
-            ivMoreOptions.setOnClickListener {
+            binding.ivMoreOptions.setOnClickListener {
                 showPopupMenu(it, video)
             }
         }
@@ -55,10 +55,14 @@ class VideoAdapter(
             val popup = PopupMenu(view.context, view)
             popup.menuInflater.inflate(R.menu.video_options_menu, popup.menu)
 
+            val subscribeMenuItem = popup.menu.findItem(R.id.menu_subscribe)
+            val isSubscribed = subscriptionViewModel.isSubscribed(video.channelName)
+            subscribeMenuItem.title = if(isSubscribed) "Unsubscribe" else "Subscribe"
+
             popup.setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
                     R.id.menu_subscribe -> {
-                        Toast.makeText(view.context, "Subscribed to: ${video.channelName}", Toast.LENGTH_SHORT).show()
+                        handleSubscription(view, video)
                         true
                     }
                     else -> false
@@ -69,10 +73,21 @@ class VideoAdapter(
         }
     }
 
+    private fun handleSubscription(view: View, video: Video) {
+        val channelName = video.channelName
+
+        if(subscriptionViewModel.isSubscribed(channelName)) {
+            subscriptionViewModel.unsubscribeFromChannel(channelName)
+            Toast.makeText(view.context, "Unsubscribed from $channelName", Toast.LENGTH_SHORT).show()
+        } else {
+            subscriptionViewModel.subscribeToChannel(channelName)
+            Toast.makeText(view.context, "Subscribed to $channelName", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VideoViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_video, parent, false)
-        return VideoViewHolder(view)
+        val binding = ItemVideoBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return VideoViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: VideoViewHolder, position: Int) {
