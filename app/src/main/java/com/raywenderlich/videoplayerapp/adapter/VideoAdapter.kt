@@ -19,7 +19,8 @@ import com.raywenderlich.videoplayerapp.viewmodel.SubscriptionViewModel
 class VideoAdapter(
     private var videos: List<Video>,
     private val onVideoClick: (Video) -> Unit,
-    private val subscriptionViewModel: SubscriptionViewModel
+    private val subscriptionViewModel: SubscriptionViewModel,
+    private val showSubscribeOption: Boolean = true
 ) : RecyclerView.Adapter<VideoAdapter.VideoViewHolder>() {
 
     inner class VideoViewHolder(private val binding: ItemVideoBinding) : RecyclerView.ViewHolder(binding.root) {
@@ -34,6 +35,11 @@ class VideoAdapter(
                 .load(video.thumbnailUrl)
                 .placeholder(R.color.surface)
                 .into(binding.ivThumbnail)
+
+            Glide.with(binding.root.context)
+                .load(video.channelAvatar)
+                .placeholder(R.color.surface)
+                .into(binding.ivChannelAvatar)
 
             // Video click listener
             binding.root.setOnClickListener {
@@ -55,9 +61,13 @@ class VideoAdapter(
             val popup = PopupMenu(view.context, view)
             popup.menuInflater.inflate(R.menu.video_options_menu, popup.menu)
 
-            val subscribeMenuItem = popup.menu.findItem(R.id.menu_subscribe)
-            val isSubscribed = subscriptionViewModel.isSubscribed(video.channelName)
-            subscribeMenuItem.title = if(isSubscribed) "Unsubscribe" else "Subscribe"
+            if(!showSubscribeOption) {
+                popup.menu.findItem(R.id.menu_subscribe)?.isVisible = false
+            } else {
+                val subscribeMenuItem = popup.menu.findItem(R.id.menu_subscribe)
+                val isSubscribed = subscriptionViewModel.isSubscribed(video.channelName)
+                subscribeMenuItem.title = if(isSubscribed) "Unsubscribe" else "Subscribe"
+            }
 
             popup.setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
@@ -80,7 +90,7 @@ class VideoAdapter(
             subscriptionViewModel.unsubscribeFromChannel(channelName)
             Toast.makeText(view.context, "Unsubscribed from $channelName", Toast.LENGTH_SHORT).show()
         } else {
-            subscriptionViewModel.subscribeToChannel(channelName)
+            subscriptionViewModel.subscribeToChannel(channelName, video.channelAvatar)
             Toast.makeText(view.context, "Subscribed to $channelName", Toast.LENGTH_SHORT).show()
         }
     }

@@ -12,6 +12,7 @@ data class Video(
     val thumbnailUrl: String = "",
     val category: String = "",
     val channelName: String = "",
+    val channelAvatar: String = "",
     val views: String = "",
     val uploadTime: String = ""
 ) : Parcelable

@@ -13,11 +13,11 @@ class SubscriptionViewModel : ViewModel() {
         _subscribedChannels.value = mutableListOf()
     }
 
-    fun subscribeToChannel(channelName: String) {
+    fun subscribeToChannel(channelName: String, channelAvatar: String) {
         val currentList = _subscribedChannels.value ?: mutableListOf()
 
         if (!isSubscribed(channelName)) {
-            val channel = Channel(channelName)
+            val channel = Channel(channelName, channelAvatar)
             currentList.add(channel)
             _subscribedChannels.value = currentList
         }

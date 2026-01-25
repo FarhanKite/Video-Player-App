@@ -4,39 +4,46 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
     android:background="@color/background">
 
-    <TextView
-        android:id="@+id/tv_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Subscriptions"
-        android:textColor="@color/text_primary"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:padding="16dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <View
-        android:id="@+id/divider"
-        android:layout_width="0dp"
-        android:layout_height="1dp"
-        android:background="#2D2D2D"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_title" />
-
+    <!-- Subscribed Channels (Horizontal) -->
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_subscriptions"
+        android:id="@+id/rv_subscribed_channels"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:clipToPadding="false"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- Category Chips (Horizontal) -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_categories"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:clipToPadding="false"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        app:layout_constraintTop_toBottomOf="@id/rv_subscribed_channels"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- Videos from Subscribed Channels (Vertical) -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_videos"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/rv_categories"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/divider" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
+    <!-- Empty Icon -->
     <ImageView
         android:id="@+id/iv_empty_icon"
         android:layout_width="80dp"
@@ -48,8 +55,9 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintVertical_bias="0.4" />
+        app:layout_constraintVertical_bias="0.4"/>
 
+    <!-- Empty Title -->
     <TextView
         android:id="@+id/tv_empty_title"
         android:layout_width="wrap_content"
@@ -60,10 +68,11 @@
         android:textSize="18sp"
         android:textStyle="bold"
         android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/iv_empty_icon"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/iv_empty_icon" />
+        app:layout_constraintEnd_toEndOf="parent"/>
 
+    <!-- Empty Description -->
     <TextView
         android:id="@+id/tv_empty_description"
         android:layout_width="0dp"
@@ -71,13 +80,13 @@
         android:layout_marginTop="8dp"
         android:layout_marginStart="32dp"
         android:layout_marginEnd="32dp"
-        android:text="Subscribe to channels from home"
+        android:text="Subscribe to channels from Home to see their videos here"
         android:textColor="@color/text_secondary"
         android:textSize="14sp"
         android:textAlignment="center"
         android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/tv_empty_title"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_empty_title" />
+        app:layout_constraintEnd_toEndOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

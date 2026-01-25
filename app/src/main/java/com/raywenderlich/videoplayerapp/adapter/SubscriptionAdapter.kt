@@ -7,6 +7,7 @@ import android.widget.TextView
 //import androidx.core.R
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
+import com.bumptech.glide.Glide
 import com.raywenderlich.videoplayerapp.databinding.ItemSubscriptionBinding
 import com.raywenderlich.videoplayerapp.model.Channel
 import com.raywenderlich.videoplayerapp.R
@@ -20,9 +21,12 @@ class SubscriptionAdapter(
         fun bind(channel: Channel) {
             binding.tvChannelName.text = channel.name
 
-//            binding.btnUnsubscribe.setOnClickListener {
-//                onUnsubscribeClick(channel)
-//            }
+            Glide.with(binding.root.context)
+                .load(channel.avatarUrl)
+                .placeholder(R.drawable.ic_subscription)
+                .error(R.drawable.ic_subscription)
+                .circleCrop()
+                .into(binding.ivChannelIcon)
         }
     }
 
