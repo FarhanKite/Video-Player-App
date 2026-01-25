@@ -89,7 +89,7 @@ class SubscriptionFragment : Fragment() {
             handleUnsubscribe(channel)
         })
 
-        binding.rvSubscriptions.layoutManager = LinearLayoutManager(context)
+        binding.rvSubscriptions.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
         binding.rvSubscriptions.adapter = subscriptionAdapter
     }
 

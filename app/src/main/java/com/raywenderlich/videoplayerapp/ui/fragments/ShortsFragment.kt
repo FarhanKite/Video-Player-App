@@ -166,6 +166,7 @@ class ShortsFragment : Fragment() {
         if(shortsList.isEmpty()) {
             Toast.makeText(requireContext(), "No shorts available", Toast.LENGTH_SHORT).show()
         } else {
+            // .post ensures that video will play when the UI is ready
             binding.vpShorts.post {
                 playVideoAtPosition(0)
             }

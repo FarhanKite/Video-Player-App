@@ -4,10 +4,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+//import androidx.core.R
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.raywenderlich.videoplayerapp.databinding.ItemSubscriptionBinding
 import com.raywenderlich.videoplayerapp.model.Channel
+import com.raywenderlich.videoplayerapp.R
 
 class SubscriptionAdapter(
     private var channels: List<Channel>,
@@ -18,14 +20,15 @@ class SubscriptionAdapter(
         fun bind(channel: Channel) {
             binding.tvChannelName.text = channel.name
 
-            binding.btnUnsubscribe.setOnClickListener {
-                onUnsubscribeClick(channel)
-            }
+//            binding.btnUnsubscribe.setOnClickListener {
+//                onUnsubscribeClick(channel)
+//            }
         }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SubscriptionViewHolder {
         val binding = ItemSubscriptionBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        // val binding = LayoutInflater.from(parent.context).inflate(R.layout.item_subscription, parent, false) as ItemSubscriptionBinding
         return SubscriptionViewHolder(binding)
     }
 
