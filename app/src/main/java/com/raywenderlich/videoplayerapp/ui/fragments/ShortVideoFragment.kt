@@ -26,6 +26,8 @@ class ShortVideoFragment : Fragment() {
     private var isPlaying = false
     private var isMuted = false
 
+    private var lastVolume = 0f
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -58,9 +60,13 @@ class ShortVideoFragment : Fragment() {
 
         binding.progressBar.isVisible = true
 
-        binding.root.postDelayed({
+//        binding.root.postDelayed({
+//            binding.progressBar.isVisible = false
+//        }, 500)
+
+        binding.root.post({
             binding.progressBar.isVisible = false
-        }, 500)
+        })
 
         initializePlayer(short.videoUrl)
 
@@ -78,7 +84,7 @@ class ShortVideoFragment : Fragment() {
 
             exoPlayer.repeatMode = Player.REPEAT_MODE_ONE
 
-            exoPlayer.volume = 0f
+            exoPlayer.volume = 0.3f
 
             exoPlayer.prepare()
 
@@ -145,7 +151,13 @@ class ShortVideoFragment : Fragment() {
     private fun toggleVolume() {
         player?.let { exoPlayer ->
             isMuted = !isMuted
-            exoPlayer.volume = if (isMuted) 0f else 1f
+            if(isMuted) {
+                lastVolume = exoPlayer.volume
+                exoPlayer.volume = 0f
+            } else {
+                exoPlayer.volume = lastVolume
+            }
+
             updateVolumeIcon()
         }
     }

@@ -10,6 +10,7 @@ data class Short(
     val thumbnailUrl: String = "",
     val title: String = "",
     val channelName: String = "",
+    val channelAvatar: String = "",
     val likes: String = "",
     val views: String = "",
     val uploadTime: String = ""
