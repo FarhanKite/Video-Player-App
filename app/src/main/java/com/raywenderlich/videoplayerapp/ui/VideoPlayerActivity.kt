@@ -6,12 +6,14 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.Tracks
 import androidx.media3.exoplayer.ExoPlayer
 import com.raywenderlich.videoplayerapp.databinding.ActivityVideoPlayerBinding
 import com.raywenderlich.videoplayerapp.model.Video
+import com.raywenderlich.videoplayerapp.databinding.ItemBackBinding
 
 class VideoPlayerActivity : AppCompatActivity() {
 
@@ -77,15 +79,23 @@ class VideoPlayerActivity : AppCompatActivity() {
                 override fun onPlaybackStateChanged(state: Int) {
                     when (state) {
                         Player.STATE_BUFFERING -> {
-                            // Show loading indicator if needed
+                            // will later...
                         }
                         Player.STATE_READY -> {
-                            // Hide loading indicator if needed
+                            // will later...
                         }
                         Player.STATE_ENDED -> {
-                            // Video ended
+                            // will later...
                             finish()
                         }
+                    }
+                }
+
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    binding.ivBack.isVisible = isPlaying
+
+                    binding.ivBack.setOnClickListener {
+                        finish()
                     }
                 }
             })
