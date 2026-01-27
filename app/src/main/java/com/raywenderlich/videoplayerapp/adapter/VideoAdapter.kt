@@ -1,5 +1,6 @@
 package com.raywenderlich.videoplayerapp.adapter
 
+import android.media.browse.MediaBrowser
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -7,6 +8,10 @@ import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.view.isVisible
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.bumptech.glide.Glide
@@ -23,9 +28,17 @@ class VideoAdapter(
     private val showSubscribeOption: Boolean = true
 ) : RecyclerView.Adapter<VideoAdapter.VideoViewHolder>() {
 
+    private var currentlyPlayingHolder: VideoViewHolder? = null
+
     inner class VideoViewHolder(private val binding: ItemVideoBinding) : RecyclerView.ViewHolder(binding.root) {
 
+        var player: ExoPlayer? = null
+        var currentVideo: Video? = null
+        private var isMuted = true
+
         fun bind(video: Video) {
+            currentVideo = video
+
             binding.tvTitle.text = video.title
             // \u2022 = •
             binding.tvDescription.text = "${video.channelName} \u2022 ${video.views} \u2022 ${video.uploadTime}"
@@ -41,20 +54,101 @@ class VideoAdapter(
                 .placeholder(R.color.surface)
                 .into(binding.ivChannelAvatar)
 
-            // Video click listener
-            binding.root.setOnClickListener {
+            binding.ivThumbnail.isVisible = true
+            binding.playerView.isVisible = false
+            binding.btnMute.isVisible = false
+            binding.progressBar.isVisible = false
+
+            binding.videoContainer.setOnClickListener {
                 onVideoClick(video)
             }
 
-            // Thumbnail click listener
-            binding.ivThumbnail.setOnClickListener {
-                onVideoClick(video)
+            binding.btnMute.setOnClickListener {
+                toggleMute()
             }
 
             // Three dot menu click listener
             binding.ivMoreOptions.setOnClickListener {
                 showPopupMenu(it, video)
             }
+        }
+
+        fun playVideo() {
+            val video = currentVideo ?: return
+
+            if (player == null) {
+                player = ExoPlayer.Builder(binding.root.context).build().also { exoPlayer ->
+                    binding.playerView.player = exoPlayer
+
+                    val mediaItem = MediaItem.fromUri(video.videoUrl)
+                    exoPlayer.setMediaItem(mediaItem)
+
+                    exoPlayer.prepare()
+                    exoPlayer.playWhenReady = true
+                    exoPlayer.volume = 0f
+                    exoPlayer.repeatMode = Player.REPEAT_MODE_ONE
+
+                    exoPlayer.addListener(object : Player.Listener {
+                        override fun onPlaybackStateChanged(playbackState: Int) {
+                            when (playbackState) {
+                                Player.STATE_BUFFERING -> {
+                                    binding.progressBar.isVisible = true
+                                }
+                                Player.STATE_READY -> {
+                                    binding.progressBar.isVisible = false
+                                    binding.ivThumbnail.isVisible = false
+                                    binding.playerView.isVisible = true
+                                    binding.btnMute.isVisible = true
+                                }
+                                Player.STATE_ENDED -> {
+                                    // will do later...
+                                }
+                            }
+                        }
+                    })
+                }
+            } else {
+                player?.playWhenReady = true
+                binding.ivThumbnail.isVisible = false
+                binding.playerView.isVisible = true
+                binding.btnMute.isVisible = true
+            }
+
+            updateMuteIcon()
+        }
+
+        fun pauseVideo() {
+            player?.playWhenReady = false
+
+            binding.ivThumbnail.isVisible = true
+            binding.playerView.isVisible = false
+            binding.btnMute.isVisible = false
+            binding.progressBar.isVisible = false
+        }
+
+        fun releasePlayer() {
+            player?.release()
+            player = null
+
+            binding.ivThumbnail.isVisible = true
+            binding.playerView.isVisible = false
+            binding.btnMute.isVisible = false
+            binding.progressBar.isVisible = false
+        }
+
+        private fun toggleMute() {
+            isMuted = !isMuted
+            player?.volume = if (isMuted) 0f else 1f
+            updateMuteIcon()
+        }
+
+        private fun updateMuteIcon() {
+            val iconRes = if (isMuted) {
+                R.drawable.ic_volume_off
+            } else {
+                R.drawable.ic_volume_on
+            }
+            binding.btnMute.setImageResource(iconRes)
         }
 
         private fun showPopupMenu(view: View, video: Video) {
@@ -106,8 +200,35 @@ class VideoAdapter(
 
     override fun getItemCount() = videos.size
 
+    override fun onViewRecycled(holder: VideoViewHolder) {
+        super.onViewRecycled(holder)
+
+        // Release player when view is recycled
+        if (currentlyPlayingHolder == holder) {
+            currentlyPlayingHolder = null
+        }
+        holder.releasePlayer()
+    }
+
+    fun onViewHolderVisible(holder: VideoViewHolder) {
+        // Pause currently playing
+        currentlyPlayingHolder?.pauseVideo()
+
+        // Play new
+        holder.playVideo()
+        currentlyPlayingHolder = holder
+    }
+
+    fun pauseAllVideos() {
+        currentlyPlayingHolder?.pauseVideo()
+        currentlyPlayingHolder = null
+    }
+
     // Update video list
     fun updateVideos(newVideos: List<Video>) {
+        currentlyPlayingHolder?.pauseVideo()
+        currentlyPlayingHolder = null
+
         videos = newVideos
         notifyDataSetChanged()
     }

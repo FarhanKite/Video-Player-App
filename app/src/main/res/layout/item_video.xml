@@ -8,18 +8,51 @@
     android:paddingBottom="16dp"
     android:background="@color/background">
 
-    <!-- Video Thumbnail -->
-    <ImageView
-        android:id="@+id/iv_thumbnail"
+    <FrameLayout
+        android:id="@+id/video_container"
         android:layout_width="0dp"
         android:layout_height="220dp"
-        android:scaleType="centerCrop"
         android:background="#1A1A1A"
-        android:contentDescription="Video thumbnail"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        tools:src="@android:color/darker_gray"/>
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.media3.ui.PlayerView
+            android:id="@+id/player_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:use_controller="false"
+            app:show_buffering="when_playing"
+            android:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/iv_thumbnail"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:contentDescription="Video thumbnail"
+            android:src="@android:color/darker_gray" />
+
+        <ProgressBar
+            android:id="@+id/progress_bar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/btn_mute"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="8dp"
+            android:src="@drawable/ic_volume_off"
+            android:padding="8dp"
+            android:background="@drawable/circle_background"
+            android:contentDescription="Mute/Unmute"
+            android:visibility="gone" />
+
+    </FrameLayout>
 
     <!-- Channel Avatar -->
     <ImageView
@@ -31,7 +64,7 @@
         android:background="#555555"
         android:scaleType="centerCrop"
         android:contentDescription="Channel avatar"
-        app:layout_constraintTop_toBottomOf="@id/iv_thumbnail"
+        app:layout_constraintTop_toBottomOf="@id/video_container"
         app:layout_constraintStart_toStartOf="parent"/>
 
     <!-- Video Title -->
@@ -47,7 +80,7 @@
         android:textStyle="bold"
         android:maxLines="2"
         android:ellipsize="end"
-        app:layout_constraintTop_toBottomOf="@id/iv_thumbnail"
+        app:layout_constraintTop_toBottomOf="@id/video_container"
         app:layout_constraintStart_toEndOf="@id/iv_channel_avatar"
         app:layout_constraintEnd_toStartOf="@id/iv_more_options"
         tools:text="Amazing Video Title Goes Here and It Can Be Long"/>
