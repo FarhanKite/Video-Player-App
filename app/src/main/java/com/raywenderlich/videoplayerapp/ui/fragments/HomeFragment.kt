@@ -15,12 +15,19 @@ import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.raywenderlich.videoplayerapp.adapter.CategoryAdapter
+import com.raywenderlich.videoplayerapp.adapter.HomeAdapter
 import com.raywenderlich.videoplayerapp.adapter.VideoAdapter
 import com.raywenderlich.videoplayerapp.databinding.FragmentHomeBinding
+import com.raywenderlich.videoplayerapp.model.HomeItem
 import com.raywenderlich.videoplayerapp.model.Video
+import com.raywenderlich.videoplayerapp.model.Short
+import com.raywenderlich.videoplayerapp.repository.ShortsRepository
 import com.raywenderlich.videoplayerapp.repository.VideoRepository
+import com.raywenderlich.videoplayerapp.ui.MainActivity
 import com.raywenderlich.videoplayerapp.ui.VideoPlayerActivity
 import com.raywenderlich.videoplayerapp.viewmodel.SubscriptionViewModel
+import com.raywenderlich.videoplayerapp.viewmodel.NavigationViewModel
+import com.raywenderlich.videoplayerapp.R
 
 class HomeFragment : Fragment() {
 
@@ -28,13 +35,16 @@ class HomeFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val subscriptionViewModel: SubscriptionViewModel by activityViewModels()
+    private val navigationViewModel: NavigationViewModel by activityViewModels()
 
     private lateinit var categoryAdapter: CategoryAdapter
-    private lateinit var videoAdapter: VideoAdapter
+    private lateinit var homeAdapter: HomeAdapter
     private val videoRepository = VideoRepository()
+    private val shortsRepository = ShortsRepository()
 
     private val categories = listOf("All", "Music", "Gaming", "News", "Sports", "Education")
     private var allVideos = listOf<Video>()
+    private var allShorts = listOf<Short>()
     private var currentCategory = "All"
 
     override fun onCreateView(
@@ -50,14 +60,14 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupCategoryRecyclerView()
-        setupVideoRecyclerView()
+        setupHomeRecyclerView()
         loadVideosFromFirebase()
     }
 
     private fun setupCategoryRecyclerView() {
         categoryAdapter = CategoryAdapter(categories) { category ->
             currentCategory = category
-            filterVideos(category)
+            filterAndMixContent(category)
         }
 
         binding.rvCategories.apply {
@@ -66,11 +76,15 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun setupVideoRecyclerView() {
-        videoAdapter = VideoAdapter(
+    private fun setupHomeRecyclerView() {
+        homeAdapter = HomeAdapter(
             emptyList(),
             { video ->
+                homeAdapter.pauseAllVideos()
                 openVideoPlayer(video)
+            },
+            {short ->
+                navigateToShort(short)
             },
             subscriptionViewModel,
             true
@@ -80,7 +94,7 @@ class HomeFragment : Fragment() {
 
         binding.rvVideos.apply {
             this.layoutManager = layoutManager
-            adapter = videoAdapter
+            adapter = homeAdapter
 
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
@@ -92,6 +106,12 @@ class HomeFragment : Fragment() {
                 }
             })
         }
+    }
+
+    private fun navigateToShort(short: Short) {
+        homeAdapter.pauseAllVideos()
+        navigationViewModel.requestNavigateToShort(short.id)
+        (activity as? MainActivity)?.binding?.bottomNavigation?.selectedItemId = R.id.nav_shorts
     }
 
     private fun checkVisibilityAndAutoPlay(layoutManager: LinearLayoutManager) {
@@ -118,13 +138,13 @@ class HomeFragment : Fragment() {
         }
 
         if (mostVisiblePosition != -1 && maxVisiblePercentage >= 0.7f) {
-            val viewHolder = binding.rvVideos.findViewHolderForAdapterPosition(mostVisiblePosition) as? VideoAdapter.VideoViewHolder
+            val viewHolder = binding.rvVideos.findViewHolderForAdapterPosition(mostVisiblePosition) as? HomeAdapter.VideoViewHolder
 
             viewHolder?.let {
-                videoAdapter.onViewHolderVisible(it)
+                homeAdapter.onViewHolderVisible(it)
             }
         } else {
-            videoAdapter.pauseAllVideos()
+            homeAdapter.pauseAllVideos()
         }
     }
 
@@ -149,6 +169,9 @@ class HomeFragment : Fragment() {
 
         binding.progressBar.isVisible = true
 
+        var videosLoaded = false
+        var shortsLoaded = false
+
         videoRepository.getAllVideos(
             onSuccess = { videos ->
                 if (!isAdded || _binding == null) return@getAllVideos
@@ -156,25 +179,32 @@ class HomeFragment : Fragment() {
                 binding.progressBar.isVisible = false
 
                 allVideos = videos
-                videoAdapter.updateVideos(allVideos)
+                videosLoaded = true
 
-                if (videos.isEmpty()) {
-                    Toast.makeText(
-                        requireContext(),
-                        "No videos found. Please add videos to Firebase.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                } else {
-                    if (isAdded && _binding != null) {
-                        binding.rvVideos.post {
-                            val layoutManager =
-                                binding.rvVideos.layoutManager as? LinearLayoutManager
-                            layoutManager?.let {
-                                checkVisibilityAndAutoPlay(it)
+                if (shortsLoaded) {
+                    binding.progressBar.isVisible = false
+                    filterAndMixContent(currentCategory)
+
+                    if (videos.isEmpty()) {
+                        Toast.makeText(
+                            requireContext(),
+                            "No videos found. Please add videos to Firebase.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } else {
+                        if (isAdded && _binding != null) {
+                            binding.rvVideos.post {
+                                val layoutManager =
+                                    binding.rvVideos.layoutManager as? LinearLayoutManager
+                                layoutManager?.let {
+                                    checkVisibilityAndAutoPlay(it)
+                                }
                             }
                         }
                     }
                 }
+
+//                videoAdapter.updateVideos(allVideos)
             },
             onFailure = { errorMessage ->
                 if (!isAdded || _binding == null) return@getAllVideos
@@ -188,9 +218,47 @@ class HomeFragment : Fragment() {
                 ).show()
             }
         )
+
+        shortsRepository.getAllShorts(
+            onSuccess = { shorts ->
+                if (!isAdded || _binding == null) return@getAllShorts
+
+                allShorts = shorts
+                shortsLoaded = true
+
+                if (videosLoaded) {
+                    binding.progressBar.isVisible = false
+                    filterAndMixContent(currentCategory)
+
+                    if (shorts.isEmpty()) {
+                        Toast.makeText(
+                            requireContext(),
+                            "No shorts found. Please add shorts to Firebase.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } else {
+                        if (isAdded && _binding != null) {
+                            binding.rvVideos.post {
+                                val layoutManager =
+                                    binding.rvVideos.layoutManager as? LinearLayoutManager
+                                layoutManager?.let {
+                                    checkVisibilityAndAutoPlay(it)
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            onFailure = { errorMessage ->
+                if (!isAdded || _binding == null) return@getAllShorts
+
+                binding.progressBar.isVisible = false
+                Toast.makeText(requireContext(), "Error loading shorts: $errorMessage", Toast.LENGTH_SHORT).show()
+            }
+        )
     }
 
-    private fun filterVideos(category: String) {
+    private fun filterAndMixContent(category: String) {
         if(!isAdded || _binding == null) return
 
         val filteredVideos = if (category == "All") {
@@ -199,8 +267,54 @@ class HomeFragment : Fragment() {
             allVideos.filter { it.category == category }
         }
 
-        videoAdapter.updateVideos(filteredVideos)
+        val mixedItems = mixContent(filteredVideos, allShorts)
+
+        homeAdapter.updateItems(mixedItems)
+
+//        binding.rvVideos.postDelayed({
+//            if (isAdded && _binding != null) {
+//                val layoutManager = binding.rvVideos.layoutManager as? LinearLayoutManager
+//                layoutManager?.let { checkVisibilityAndAutoPlay(it) }
+//            }
+//        }, 300)
     }
+
+    private fun mixContent(videos: List<Video>, shorts: List<Short>): List<HomeItem> {
+        val mixedList = mutableListOf<HomeItem>()
+        var videoIndex = 0
+        var shortsIndex = 0
+
+        while (videoIndex < videos.size) {
+            val videosBeforeShorts = (2..5).random()
+
+            repeat(videosBeforeShorts) {
+                if (videoIndex < videos.size) {
+                    mixedList.add(HomeItem.VideoItem(videos[videoIndex]))
+                    videoIndex++
+                }
+            }
+
+            if (shortsIndex + 3 < shorts.size) {
+                val shortsForGrid = shorts.subList(shortsIndex, shortsIndex + 4)
+                mixedList.add(HomeItem.ShortsGridItem(shortsForGrid))
+                shortsIndex += 4
+            }
+        }
+
+        return mixedList
+    }
+
+//    private fun filterVideos(category: String) {
+//        if(!isAdded || _binding == null) return
+//
+//        val filteredVideos = if (category == "All") {
+//            allVideos
+//        } else {
+//            allVideos.filter { it.category == category }
+//        }
+//
+//        videoAdapter.updateVideos(filteredVideos)
+//    }
 
     private fun openVideoPlayer(video: Video, isAutoPlay: Boolean = false) {
         val intent = Intent(requireContext(), VideoPlayerActivity::class.java).apply {
@@ -212,7 +326,7 @@ class HomeFragment : Fragment() {
     override fun onPause() {
         super.onPause()
 
-        videoAdapter.pauseAllVideos()
+        homeAdapter.pauseAllVideos()
     }
 
     override fun onDestroyView() {

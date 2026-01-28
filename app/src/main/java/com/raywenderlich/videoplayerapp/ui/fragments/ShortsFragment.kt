@@ -8,12 +8,14 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.animation.Positioning
 import com.raywenderlich.videoplayerapp.adapter.ShortsAdapter
 import com.raywenderlich.videoplayerapp.databinding.FragmentShortsBinding
 import com.raywenderlich.videoplayerapp.model.Short
 import com.raywenderlich.videoplayerapp.repository.ShortsRepository
+import com.raywenderlich.videoplayerapp.viewmodel.NavigationViewModel
 
 class ShortsFragment : Fragment() {
 
@@ -22,6 +24,8 @@ class ShortsFragment : Fragment() {
 
     private lateinit var shortsAdapter: ShortsAdapter
     private val shortsRepository = ShortsRepository()
+
+    private val navigationViewModel: NavigationViewModel by activityViewModels()
     private var shortsList = listOf<Short>()
     private var currentPosition = 0
 
@@ -62,6 +66,35 @@ class ShortsFragment : Fragment() {
                 currentPosition = position
             }
         })
+    }
+
+    private fun observeNavigation() {
+        navigationViewModel.navigateToShort.observe(viewLifecycleOwner) { shortId ->
+            if (shortId != null && shortsList.isNotEmpty()) {
+                jumpToShort(shortId)
+                navigationViewModel.clearNavigationRequest()
+            }
+        }
+    }
+
+    private fun jumpToShort(shortId: String) {
+
+        if (!isAdded || _binding == null) return
+
+        val position = shortsList.indexOfFirst { it.id == shortId }
+
+        if(position != -1) {
+            binding.vpShorts.setCurrentItem(position, false)
+
+            binding.vpShorts.post {
+                if (isAdded && _binding != null) {
+                    playVideoAtPosition(position)
+                    currentPosition = position
+                }
+            }
+        } else {
+            Toast.makeText(requireContext(), "Short not found", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun playVideoAtPosition(position: Int) {
@@ -106,6 +139,9 @@ class ShortsFragment : Fragment() {
                         playVideoAtPosition(0)
                     }
                 }
+
+                // observe navigation when data is loaded successfully
+                observeNavigation()
             },
             onFailure = { errorMessage ->
                 if(!isAdded || _binding == null) return@getAllShorts
