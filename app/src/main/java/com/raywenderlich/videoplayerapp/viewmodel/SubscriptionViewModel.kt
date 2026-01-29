@@ -36,8 +36,4 @@ class SubscriptionViewModel : ViewModel() {
     fun getSubscribedChannels() : List<Channel> {
         return _subscribedChannels.value ?: emptyList()
     }
-
-    fun getSubscriptionCount() : Int {
-        return _subscribedChannels.value?.size ?: 0
-    }
 }

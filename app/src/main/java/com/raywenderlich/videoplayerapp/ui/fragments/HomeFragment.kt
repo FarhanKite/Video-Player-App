@@ -287,10 +287,12 @@ class HomeFragment : Fragment() {
         while (videoIndex < videos.size) {
             val videosBeforeShorts = (2..5).random()
 
-            repeat(videosBeforeShorts) {
+            for(step in 1..videosBeforeShorts) {
                 if (videoIndex < videos.size) {
                     mixedList.add(HomeItem.VideoItem(videos[videoIndex]))
                     videoIndex++
+                } else {
+                    break
                 }
             }
 

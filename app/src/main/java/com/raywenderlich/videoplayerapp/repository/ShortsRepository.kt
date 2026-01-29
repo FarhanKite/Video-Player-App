@@ -30,21 +30,4 @@ class ShortsRepository {
             }
         })
     }
-
-    fun getShortById(
-        shortId: String,
-        onSuccess: (Short?) -> Unit,
-        onFailure: (String) -> Unit
-    ) {
-        shortsRef.child(shortId).addListenerForSingleValueEvent(object : ValueEventListener{
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val short = snapshot.getValue(Short::class.java)
-                onSuccess(short)
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                onFailure(error.message)
-            }
-        })
-    }
 }

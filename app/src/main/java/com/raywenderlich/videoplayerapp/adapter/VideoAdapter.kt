@@ -211,10 +211,8 @@ class VideoAdapter(
     }
 
     fun onViewHolderVisible(holder: VideoViewHolder) {
-        // Pause currently playing
         currentlyPlayingHolder?.pauseVideo()
 
-        // Play new
         holder.playVideo()
         currentlyPlayingHolder = holder
     }
@@ -224,7 +222,6 @@ class VideoAdapter(
         currentlyPlayingHolder = null
     }
 
-    // Update video list
     fun updateVideos(newVideos: List<Video>) {
         currentlyPlayingHolder?.pauseVideo()
         currentlyPlayingHolder = null

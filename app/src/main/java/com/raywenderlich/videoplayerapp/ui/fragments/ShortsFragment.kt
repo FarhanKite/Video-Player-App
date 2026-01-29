@@ -68,35 +68,6 @@ class ShortsFragment : Fragment() {
         })
     }
 
-    private fun observeNavigation() {
-        navigationViewModel.navigateToShort.observe(viewLifecycleOwner) { shortId ->
-            if (shortId != null && shortsList.isNotEmpty()) {
-                jumpToShort(shortId)
-                navigationViewModel.clearNavigationRequest()
-            }
-        }
-    }
-
-    private fun jumpToShort(shortId: String) {
-
-        if (!isAdded || _binding == null) return
-
-        val position = shortsList.indexOfFirst { it.id == shortId }
-
-        if(position != -1) {
-            binding.vpShorts.setCurrentItem(position, false)
-
-            binding.vpShorts.post {
-                if (isAdded && _binding != null) {
-                    playVideoAtPosition(position)
-                    currentPosition = position
-                }
-            }
-        } else {
-            Toast.makeText(requireContext(), "Short not found", Toast.LENGTH_SHORT).show()
-        }
-    }
-
     private fun playVideoAtPosition(position: Int) {
         if (!isAdded || _binding == null) return
 
@@ -151,6 +122,35 @@ class ShortsFragment : Fragment() {
                 Toast.makeText(requireContext(), "Error laoding shorts: $errorMessage", Toast.LENGTH_SHORT).show()
             }
         )
+    }
+
+    private fun observeNavigation() {
+        navigationViewModel.navigateToShort.observe(viewLifecycleOwner) { shortId ->
+            if (shortId != null && shortsList.isNotEmpty()) {
+                jumpToShort(shortId)
+                navigationViewModel.clearNavigationRequest()
+            }
+        }
+    }
+
+    private fun jumpToShort(shortId: String) {
+
+        if (!isAdded || _binding == null) return
+
+        val position = shortsList.indexOfFirst { it.id == shortId }
+
+        if(position != -1) {
+            binding.vpShorts.setCurrentItem(position, false)
+
+            binding.vpShorts.post {
+                if (isAdded && _binding != null) {
+                    playVideoAtPosition(position)
+                    currentPosition = position
+                }
+            }
+        } else {
+            Toast.makeText(requireContext(), "Short not found", Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onPause() {
