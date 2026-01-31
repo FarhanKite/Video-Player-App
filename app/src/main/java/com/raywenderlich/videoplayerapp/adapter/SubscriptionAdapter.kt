@@ -4,6 +4,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
+import androidx.compose.runtime.internal.StabilityInferred
+import androidx.core.content.ContentProviderCompat.requireContext
 //import androidx.core.R
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
@@ -14,7 +17,8 @@ import com.raywenderlich.videoplayerapp.R
 
 class SubscriptionAdapter(
     private var channels: List<Channel>,
-    private val onUnsubscribeClick: (Channel) -> Unit
+    private var selectedChannelName: String? = null,
+    private val onChannelClick: (Channel) -> Unit
 ) : RecyclerView.Adapter<SubscriptionAdapter.SubscriptionViewHolder>() {
 
     inner class SubscriptionViewHolder(private val binding: ItemSubscriptionBinding) : RecyclerView.ViewHolder(binding.root) {
@@ -27,7 +31,18 @@ class SubscriptionAdapter(
                 .error(R.drawable.ic_subscription)
                 .circleCrop()
                 .into(binding.ivChannelIcon)
+
+            val isSelected = (channel.name == selectedChannelName)
+
+            binding.root.setOnClickListener {
+                onChannelClick(channel)
+            }
         }
+    }
+
+    fun updateSelection(newSelectedChannel: String?) {
+        selectedChannelName = newSelectedChannel
+        notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SubscriptionViewHolder {

@@ -31,7 +31,6 @@ class SubscriptionFragment : Fragment() {
     private val subscriptionViewModel: SubscriptionViewModel by activityViewModels()
 
     private lateinit var subscriptionAdapter: SubscriptionAdapter
-    private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var videoAdapter: VideoAdapter
 
     private val videoRepository = VideoRepository()
@@ -40,6 +39,7 @@ class SubscriptionFragment : Fragment() {
     private var allVideos = listOf<Video>()
     private var filteredVideos = listOf<Video>()
     private var currentCategory = "All"
+    private var selectedChannelName: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -54,28 +54,17 @@ class SubscriptionFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupChannelsRecyclerView()
-        setupCategoriesRecyclerView()
         setupVideosRecyclerView()
         observeSubscriptions()
     }
 
     private fun setupChannelsRecyclerView() {
-        subscriptionAdapter = SubscriptionAdapter(emptyList(), { channel ->
-            handleUnsubscribe(channel)
+        subscriptionAdapter = SubscriptionAdapter(emptyList(), null, { channel ->
+            handleChannelClick(channel)
         })
 
         binding.rvSubscribedChannels.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
         binding.rvSubscribedChannels.adapter = subscriptionAdapter
-    }
-
-    private fun setupCategoriesRecyclerView() {
-        categoryAdapter = CategoryAdapter(categories) { category ->
-            currentCategory = category
-            filterVideosByCategory(category)
-        }
-
-        binding.rvCategories.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-        binding.rvCategories.adapter = categoryAdapter
     }
 
     private fun setupVideosRecyclerView() {
@@ -87,9 +76,36 @@ class SubscriptionFragment : Fragment() {
         binding.rvVideos.adapter = videoAdapter
     }
 
-    fun handleUnsubscribe(channel: Channel) {
-        subscriptionViewModel.unsubscribeFromChannel(channel.name)
-        Toast.makeText(requireContext(), "Unsubscribed from $channel.name", Toast.LENGTH_SHORT).show()
+    private fun handleChannelClick(channel: Channel) {
+        if(selectedChannelName == channel.name) {
+            clearChannelFilter()
+        } else {
+            selectChannel(channel.name)
+        }
+    }
+
+    private fun selectChannel(channelName: String) {
+        selectedChannelName = channelName
+        subscriptionAdapter.updateSelection(channelName)
+        applyFilters()
+    }
+
+    private fun clearChannelFilter() {
+        selectedChannelName = null
+        subscriptionAdapter.updateSelection(null)
+        applyFilters()
+    }
+
+    private fun applyFilters() {
+        if(!isAdded || _binding == null) return
+
+        var selectedChannelVideos = filteredVideos
+
+        if(selectedChannelName != null) {
+            selectedChannelVideos = selectedChannelVideos.filter { selectedChannelName == it.channelName }
+        }
+
+        videoAdapter.updateVideos(selectedChannelVideos)
     }
 
     private fun observeSubscriptions() {
@@ -124,21 +140,7 @@ class SubscriptionFragment : Fragment() {
             subscribedChannelNames.contains(video.channelName)
         }
 
-        filterVideosByCategory(currentCategory)
-    }
-
-    private fun filterVideosByCategory(category: String) {
-        val displayVideos = if (category == "All") {
-            filteredVideos
-        } else {
-            filteredVideos.filter { it.category == category }
-        }
-
-        videoAdapter.updateVideos(displayVideos)
-
-        if(displayVideos.isEmpty() && filteredVideos.isNotEmpty()) {
-            Toast.makeText(requireContext(), "No $category videos from subscriptions", Toast.LENGTH_SHORT).show()
-        }
+        applyFilters()
     }
 
     private fun openVideoPlayer(video: Video) {
@@ -155,7 +157,6 @@ class SubscriptionFragment : Fragment() {
             binding.tvEmptyDescription.isVisible = true
 
             binding.rvSubscribedChannels.isVisible = false
-            binding.rvCategories.isVisible = false
             binding.rvVideos.isVisible = false
         } else {
             binding.ivEmptyIcon.isVisible = false
@@ -163,7 +164,6 @@ class SubscriptionFragment : Fragment() {
             binding.tvEmptyDescription.isVisible = false
 
             binding.rvSubscribedChannels.isVisible = true
-            binding.rvCategories.isVisible = true
             binding.rvVideos.isVisible = true
         }
     }

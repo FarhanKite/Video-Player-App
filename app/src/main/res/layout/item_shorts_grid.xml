@@ -37,19 +37,23 @@
     <LinearLayout
         android:id="@+id/grid_container"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="8dp"
         android:orientation="vertical"
+        android:fitsSystemWindows="true"
         app:layout_constraintTop_toBottomOf="@id/tv_shorts_header"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" >
+        app:layout_constraintEnd_toEndOf="parent"
+        android:weightSum="2">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:orientation="horizontal"
+            android:layout_weight="1"
             android:weightSum="2" >
 
             <include
@@ -72,9 +76,10 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:layout_marginTop="8dp"
             android:orientation="horizontal"
+            android:layout_weight="1"
             android:weightSum="2" >
 
             <include
