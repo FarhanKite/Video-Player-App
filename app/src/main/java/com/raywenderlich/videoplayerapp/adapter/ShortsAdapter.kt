@@ -2,6 +2,8 @@ package com.raywenderlich.videoplayerapp.adapter
 
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.raywenderlich.videoplayerapp.model.Short
 import com.raywenderlich.videoplayerapp.ui.fragments.ShortVideoFragment
@@ -55,4 +57,23 @@ class ShortsAdapter(
         // Apply diff
         diffResult.dispatchUpdatesTo(this)
     }
+
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        super.onAttachedToRecyclerView(recyclerView)
+
+        // this line will force onViewDetachedFromWindow and
+        // onViewAttachedToWindow to be called when the view
+        // is no longer visible in the window
+        (recyclerView.layoutManager as LinearLayoutManager).recycleChildrenOnDetach = true
+    }
+
+//
+//    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+//        super.onAttachedToRecyclerView(recyclerView)
+//    }
+//
+//    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+//        super.onDetachedFromRecyclerView(recyclerView)
+//        (recyclerView.layoutManager as LinearLayoutManager).recycleChildrenOnDetach = true
+//    }
 }
