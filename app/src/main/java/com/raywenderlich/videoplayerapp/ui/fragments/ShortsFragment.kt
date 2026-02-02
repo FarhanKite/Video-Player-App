@@ -2,6 +2,7 @@ package com.raywenderlich.videoplayerapp.ui.fragments
 
 import android.content.pm.ActivityInfo
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -34,6 +35,8 @@ class ShortsFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        _binding = null
+
         _binding = FragmentShortsBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -43,6 +46,8 @@ class ShortsFragment : Fragment() {
 
         setupViewPager()
         loadShortsFromFirebase()
+
+        observeNavigation()
     }
 
     private fun setupViewPager() {
@@ -51,7 +56,7 @@ class ShortsFragment : Fragment() {
         shortsAdapter = ShortsAdapter(this, emptyList())
         binding.vpShorts.adapter = shortsAdapter
 
-        binding.vpShorts.offscreenPageLimit = 1
+        binding.vpShorts.offscreenPageLimit = -1
 
         binding.vpShorts.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
@@ -71,8 +76,39 @@ class ShortsFragment : Fragment() {
     private fun playVideoAtPosition(position: Int) {
         if (!isAdded || _binding == null) return
 
-        val fragment = getFragmentAtPosition(position)
-        fragment?.playVideo()
+//        binding.root.postDelayed({
+//            if (!isAdded || _binding == null) return@postDelayed
+//
+//            val fragment = getFragmentAtPosition(position)
+//            if (fragment != null) {
+//                fragment.playVideo()
+//                Log.d("", "Playing video at position: $position")
+//            } else {
+//                Log.d("", "Fragment not found at position: $position")
+//
+//                binding.root.postDelayed({
+//                    if (isAdded && _binding != null) {
+//                        getFragmentAtPosition(position)?.playVideo()
+//                    }
+//                }, 300)
+//            }
+//        }, 100)
+
+        binding.root.post({
+            val fragment = getFragmentAtPosition(position)
+            if (fragment != null) {
+                fragment.playVideo()
+                Log.d("", "Playing video at position: $position")
+            } else {
+                Log.d("", "Fragment not found at position: $position")
+
+//                binding.root.postDelayed({
+//                    if (isAdded && _binding != null) {
+//                        getFragmentAtPosition(position)?.playVideo()
+//                    }
+//                }, 300)
+            }
+        })
     }
 
     private fun pauseVideoAtPosition(position: Int) {
@@ -80,13 +116,20 @@ class ShortsFragment : Fragment() {
 
         val fragment = getFragmentAtPosition(position)
         fragment?.pauseVideo()
+        Log.d("", "Pausing video at position: $position")
     }
 
     private fun getFragmentAtPosition(position: Int) : ShortVideoFragment? {
         if (!isAdded || _binding == null) return null
 
         val fragmentTag = "f$position"
-        return childFragmentManager.findFragmentByTag(fragmentTag) as? ShortVideoFragment
+        val fragment = childFragmentManager.findFragmentByTag(fragmentTag) as? ShortVideoFragment
+
+        if (fragment == null) {
+            Log.d("", "Fragment not found for position: $position")
+        }
+
+        return fragment
     }
 
     private fun loadShortsFromFirebase() {
@@ -106,9 +149,20 @@ class ShortsFragment : Fragment() {
                     shortsList = shorts
                     shortsAdapter.updateShorts(shortsList)
 
-                    binding.vpShorts.post {
-                        playVideoAtPosition(0)
-                    }
+//                    binding.vpShorts.post {
+//                        playVideoAtPosition(0)
+//                    }
+//                    binding.vpShorts.postDelayed({
+//                        if (isAdded && _binding != null) {
+//                            playVideoAtPosition(0)
+//                        }
+//                    }, 300)
+
+                    binding.vpShorts.post({
+                        if (isAdded && _binding != null) {
+                            playVideoAtPosition(0)
+                        }
+                    })
                 }
 
                 // observe navigation when data is loaded successfully
@@ -142,12 +196,19 @@ class ShortsFragment : Fragment() {
         if(position != -1) {
             binding.vpShorts.setCurrentItem(position, false)
 
-            binding.vpShorts.post {
+//            binding.vpShorts.post {
+//                if (isAdded && _binding != null) {
+//                    playVideoAtPosition(position)
+//                    currentPosition = position
+//                }
+//            }
+
+            binding.vpShorts.postDelayed({
                 if (isAdded && _binding != null) {
                     playVideoAtPosition(position)
                     currentPosition = position
                 }
-            }
+            }, 500)
         } else {
             Toast.makeText(requireContext(), "Short not found", Toast.LENGTH_SHORT).show()
         }
@@ -161,10 +222,36 @@ class ShortsFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         playVideoAtPosition(currentPosition)
+
+        Log.d("${this::class.java.simpleName}", "${Throwable().stackTrace[0].methodName}")
+    }
+
+    override fun onStop() {
+        super.onStop()
     }
 
     override fun onDestroyView() {
-        super.onDestroyView()
+//        super.onDestroyView()
         _binding = null
+
+        val fragmentCount = childFragmentManager.fragments.size
+        Log.e("${this::class.java.simpleName}", "Fragments still alive: $fragmentCount")
+
+//        binding.vpShorts.adapter = null
+        Log.d("${this::class.java.simpleName}", "${Throwable().stackTrace[0].methodName}")
+
+        super.onDestroyView()
+    }
+
+    override fun onDestroy() {
+        _binding = null
+
+        val fragmentCount = childFragmentManager.fragments.size
+        Log.e("${this::class.java.simpleName}", "Fragments still alive: $fragmentCount")
+
+//        binding.vpShorts.adapter = null
+        Log.d("${this::class.java.simpleName}", "${Throwable().stackTrace[0].methodName}")
+
+        super.onDestroy()
     }
 }

@@ -50,6 +50,19 @@ class VideoPlayerActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         releasePlayer()
+
+        Log.d("${this::class.java.simpleName}", "${Throwable().stackTrace[0].methodName}")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        player?.playWhenReady = false
+
+        Log.d("${this::class.java.simpleName}", "${Throwable().stackTrace[0].methodName}")
+    }
+
+    override fun onResume() {
+        super.onResume()
     }
 
     private fun initializePlayer() {
@@ -70,6 +83,7 @@ class VideoPlayerActivity : AppCompatActivity() {
                 exoPlayer.setMediaItem(mediaItem)
             }
 
+//            exoPlayer.playWhenReady = playWhenReady
             exoPlayer.playWhenReady = playWhenReady
             exoPlayer.seekTo(currentPosition)
             exoPlayer.prepare()
@@ -77,22 +91,29 @@ class VideoPlayerActivity : AppCompatActivity() {
             // Add listener for player events
             exoPlayer.addListener(object : Player.Listener {
                 override fun onPlaybackStateChanged(state: Int) {
+                    super.onPlaybackStateChanged(state)
+
                     when (state) {
                         Player.STATE_BUFFERING -> {
                             // will later...
                         }
                         Player.STATE_READY -> {
+                            Log.d("${this::class.java.simpleName}", "${Throwable().stackTrace[0].methodName} STATE_READY")
                             // will later...
                         }
                         Player.STATE_ENDED -> {
                             // will later...
-                            finish()
+                            // finish()
+                            // releasePlayer()
+                            Log.d("${this::class.java.simpleName}", "${Throwable().stackTrace[0].methodName} STATE_ENDED")
                         }
                     }
                 }
 
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
-                    binding.ivBack.isVisible = isPlaying
+                    super.onIsPlayingChanged(isPlaying)
+
+                    binding.ivBack.isVisible = true
 
                     binding.ivBack.setOnClickListener {
                         finish()

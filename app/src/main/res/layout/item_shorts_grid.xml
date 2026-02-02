@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:paddingTop="8dp"
-    android:paddingBottom="16dp"
     android:background="@color/background">
 
     <TextView
@@ -33,7 +32,7 @@
         app:layout_constraintBottom_toBottomOf="@id/tv_shorts_header"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- 2x2 grid -->
+    <!-- 2x2 Grid Container -->
     <LinearLayout
         android:id="@+id/grid_container"
         android:layout_width="0dp"
@@ -42,7 +41,6 @@
         android:layout_marginEnd="8dp"
         android:layout_marginTop="8dp"
         android:orientation="vertical"
-        android:fitsSystemWindows="true"
         app:layout_constraintTop_toBottomOf="@id/tv_shorts_header"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -52,51 +50,53 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:orientation="horizontal"
             android:layout_weight="1"
-            android:weightSum="2" >
+            android:orientation="horizontal"
+            android:weightSum="2"
+            android:paddingBottom="6dp">
 
             <include
                 android:id="@+id/short_cell_1"
                 layout="@layout/item_short_cell"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_marginEnd="4dp" />
+                android:layout_marginEnd="6dp" />
 
             <include
                 android:id="@+id/short_cell_2"
                 layout="@layout/item_short_cell"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_marginStart="4dp" />
+                android:layout_marginStart="6dp" />
 
         </LinearLayout>
 
+        <!-- Second Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_marginTop="8dp"
-            android:orientation="horizontal"
             android:layout_weight="1"
-            android:weightSum="2" >
+            android:orientation="horizontal"
+            android:weightSum="2"
+            android:paddingTop="6dp">
 
             <include
                 android:id="@+id/short_cell_3"
                 layout="@layout/item_short_cell"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_marginEnd="4dp" />
+                android:layout_marginEnd="6dp" />
 
             <include
                 android:id="@+id/short_cell_4"
                 layout="@layout/item_short_cell"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_marginStart="4dp" />
+                android:layout_marginStart="6dp" />
 
         </LinearLayout>
 
