@@ -17,6 +17,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.raywenderlich.videoplayerapp.R
 import com.raywenderlich.videoplayerapp.databinding.FragmentShortVideoBinding
 import com.raywenderlich.videoplayerapp.model.Short
+import com.raywenderlich.videoplayerapp.utils.PlayerManager
 import kotlinx.coroutines.delay
 import kotlin.jvm.java
 import kotlin.math.exp
@@ -26,13 +27,9 @@ class ShortVideoFragment : Fragment() {
     private val binding get() = _binding!!
 
     private var short: Short? = null
+    private val playerManager = PlayerManager
 
-    private var player: ExoPlayer? = null
-    private var isPlaying = false
     private var isMuted = false
-    private var isPlayerReady = false
-    private var shouldAutoPlay = false
-
     private var lastVolume = 0.3f
 
     override fun onCreateView(
@@ -56,7 +53,7 @@ class ShortVideoFragment : Fragment() {
 
         short?.let { shortData ->
             setupUI(shortData)
-            initializePlayer(shortData.videoUrl)
+            setupPlayerCallbacks()
             setupClickListeners(shortData)
         }
 
@@ -68,14 +65,14 @@ class ShortVideoFragment : Fragment() {
 
     private fun setupUI(short: Short) {
         binding.playerView.useController = true
-        binding.playerView.controllerShowTimeoutMs = 1000
+        binding.playerView.controllerShowTimeoutMs = 800
 
         binding.tvTitle.text = short.title
         binding.tvChannelName.text = short.channelName
         binding.tvLike.text = short.likes
         binding.tvViews.text = short.views
 
-        binding.progressBar.isVisible = true
+        binding.progressBar.isVisible = false
 
 //        binding.root.postDelayed({
 //            binding.progressBar.isVisible = false
@@ -84,88 +81,41 @@ class ShortVideoFragment : Fragment() {
 //        binding.root.post({
 //            binding.progressBar.isVisible = false
 //        })
+
+        updateVolumeIcon()
     }
 
-    private fun initializePlayer(videoUrl: String) {
-        releasePlayer()
+    private fun setupPlayerCallbacks() {
+        playerManager.setPlayerCallbacks(
+            onReady = {
+                if (isAdded && _binding != null) {
+                    binding.progressBar.isVisible = false
+                }
+            },
+            onBuffering = { isBuffering ->
+                if (isAdded && _binding != null) {
+                    binding.progressBar.isVisible = isBuffering
+                }
+            },
+            onError = { errorMessage ->
+                if (isAdded && _binding != null) {
+                    binding.progressBar.isVisible = false
+                    Toast.makeText(
+                        requireContext(),
+                        "Error playing video: $errorMessage",
+                        Toast.LENGTH_SHORT
+                    ).show()
 
-        binding.progressBar.isVisible = true
-        isPlayerReady = false
-
-        try {
-            player = ExoPlayer.Builder(requireContext()).build().also { exoPlayer ->
-                binding.playerView.player = exoPlayer
-
-                val mediaItem = MediaItem.fromUri(videoUrl)
-                exoPlayer.setMediaItem(mediaItem)
-
-                exoPlayer.repeatMode = Player.REPEAT_MODE_ONE
-
-                exoPlayer.volume = lastVolume
-
-                exoPlayer.playWhenReady = false
-
-                exoPlayer.prepare()
-
-                exoPlayer.addListener(object : Player.Listener {
-                    override fun onPlaybackStateChanged(playbackState: Int) {
-                        when (playbackState) {
-                            Player.STATE_BUFFERING -> {
-                                binding.progressBar.isVisible = true
-                            }
-
-                            Player.STATE_READY -> {
-                                binding.progressBar.isVisible = false
-                                isPlayerReady = true
-
-                                if (shouldAutoPlay) {
-                                    exoPlayer.play()
-                                    shouldAutoPlay = false
-                                }
-                            }
-
-                            Player.STATE_ENDED -> {
-
+                    binding.root.postDelayed({
+                        if (isAdded && _binding != null) {
+                            short?.videoUrl?.let { url ->
+                                attachPlayerToView(url, autoPlay = false)
                             }
                         }
-                    }
-
-                    override fun onPlayerError(error: PlaybackException) {
-                        super.onPlayerError(error)
-
-                        binding.progressBar.isVisible = false
-
-                        if (isAdded) {
-                            Toast.makeText(
-                                requireContext(),
-                                "Error playing video: ${error.message}",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-
-                        binding.root.postDelayed({
-                            if (isAdded && _binding != null) {
-                                short?.videoUrl?.let { url ->
-                                    initializePlayer(url)
-                                }
-                            }
-                        }, 1000)
-                    }
-                })
+                    }, 1000)
+                }
             }
-            updateVolumeIcon()
-
-        } catch (e: Exception) {
-            binding.progressBar.isVisible = false
-            if (isAdded) {
-                Toast.makeText(
-                    requireContext(),
-                    "Failed to initialize player",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-
-        }
+        )
     }
 
     private fun setupClickListeners(short: Short) {
@@ -186,42 +136,36 @@ class ShortVideoFragment : Fragment() {
             Toast.makeText(requireContext(), "Shared: ${short.title}", Toast.LENGTH_SHORT).show()
         }
 
-//        binding.playerView.setOnClickListener {
-//            Toast.makeText(requireContext(), "Tap to pause/play", Toast.LENGTH_SHORT).show()
-//        }
-
         binding.playerView.setOnClickListener {
             togglePlayPause()
         }
     }
 
     private fun togglePlayPause() {
-        player?.let { exoPlayer ->
-            if (exoPlayer.isPlaying) {
-                exoPlayer.pause()
-            } else {
-                exoPlayer.play()
-            }
+        if (playerManager.isPlaying()) {
+            playerManager.pause()
+        } else {
+            playerManager.play()
         }
     }
 
     private fun toggleVolume() {
-        player?.let { exoPlayer ->
-            isMuted = !isMuted
-            if (isMuted) {
-                lastVolume = exoPlayer.volume
-                exoPlayer.volume = 0f
-            } else {
-                exoPlayer.volume = lastVolume
-            }
-            updateVolumeIcon()
+        isMuted = !isMuted
+
+        if (isMuted) {
+            lastVolume = playerManager.getVolume()
+            playerManager.setVolume(0f)
+        } else {
+            playerManager.setVolume(lastVolume)
         }
+
+        updateVolumeIcon()
     }
 
     private fun updateVolumeIcon() {
         if (!isAdded || _binding == null) return
 
-        val iconRes = if (isMuted) {
+        val iconRes = if (isMuted || playerManager.getVolume() == 0f) {
             R.drawable.ic_volume_off
         } else {
             R.drawable.ic_volume_on
@@ -229,43 +173,62 @@ class ShortVideoFragment : Fragment() {
         binding.btnVolume.setImageResource(iconRes)
     }
 
+    private fun attachPlayerToView(videoUrl: String, autoPlay: Boolean) {
+        if (!isAdded || _binding == null) return
+
+        binding.playerView.isVisible = true
+
+        playerManager.attachPlayer(
+            playerView = binding.playerView,
+            videoUrl = videoUrl,
+            autoPlay = autoPlay,
+            context = requireContext()
+        )
+
+        Log.d(
+            "${this::class.java.simpleName}",
+            "Player attached for video: ${short?.id}"
+        )
+    }
+
+    private fun detachPlayerFromView() {
+        if (!isAdded || _binding == null) return
+
+        playerManager.detachPlayer()
+
+        Log.d(
+            "${this::class.java.simpleName}",
+            "Player detached from: ${short?.id}"
+        )
+    }
+
     fun playVideo() {
-        if (player == null) {
-            Log.d(
-                "${this::class.java.simpleName}",
-                "${Throwable().stackTrace[0].methodName} ${short?.id}"
-            )
+        short?.videoUrl?.let { url ->
+            attachPlayerToView(url, autoPlay = true)
         }
 
-        player?.let { exoPlayer ->
-            if (isPlayerReady) {
-                exoPlayer.play()
-            } else {
-                shouldAutoPlay = true
-            }
-        } ?: run {
-            short?.videoUrl?.let { url -> initializePlayer(url) }
-            shouldAutoPlay = true
-        }
+        Log.d(
+            "${this::class.java.simpleName}",
+            "playVideo() called for: ${short?.id}"
+        )
+
     }
 
     fun pauseVideo() {
-        player?.let { exoPlayer ->
-            exoPlayer.pause()
-        }
-        shouldAutoPlay = false
+        detachPlayerFromView()
+
+        Log.d(
+            "${this::class.java.simpleName}",
+            "pauseVideo() called for: ${short?.id}"
+        )
     }
 
     fun isVideoPlaying(): Boolean {
-        return player?.isPlaying ?: false
+        return playerManager.isPlaying()
     }
 
     override fun onPause() {
         super.onPause()
-        // pauseVideo()
-        releasePlayer()
-
-//        binding.playerView.setPlayer(null)
 
         Log.d(
             "${this::class.java.simpleName}",
@@ -276,12 +239,6 @@ class ShortVideoFragment : Fragment() {
     override fun onResume() {
         super.onResume()
 
-        if(player == null && short != null) {
-            short?.videoUrl?.let {
-                url -> initializePlayer(url)
-            }
-        }
-
         Log.d(
             "${this::class.java.simpleName}",
             "${Throwable().stackTrace[0].methodName} ${short?.id}"
@@ -291,23 +248,20 @@ class ShortVideoFragment : Fragment() {
     override fun onStop() {
         super.onStop()
 
-        releasePlayer()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-//        releasePlayer()
+        Log.d(
+            "${this::class.java.simpleName}",
+            "${Throwable().stackTrace[0].methodName} ${short?.id}"
+        )
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        releasePlayer()
-        _binding = null
 
-//        for(i in 1..10000) {
-//
-//        }
+        playerManager.clearCallbacks()
+
+        detachPlayerFromView()
+
+        _binding = null
 
         Log.d(
             "${this::class.java.simpleName}",
@@ -315,21 +269,13 @@ class ShortVideoFragment : Fragment() {
         )
     }
 
-    private fun releasePlayer() {
-        player?.let { exoPlayer ->
-            try {
-                exoPlayer.stop()
-                exoPlayer.release()
-            } catch (e: Exception) {
-                Log.e("${this::class.java.simpleName}", "Error releasing player: ${e.message}", e)
-            }
-        }
+    override fun onDestroy() {
+        super.onDestroy()
 
-        player = null
-        isPlayerReady = false
-        shouldAutoPlay = false
-
-        binding.playerView.setPlayer(null)
+        Log.d(
+            "${this::class.java.simpleName}",
+            "${Throwable().stackTrace[0].methodName} ${short?.id}"
+        )
     }
 
     companion object {

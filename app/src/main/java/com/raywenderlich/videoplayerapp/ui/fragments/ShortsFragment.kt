@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.view.isVisible
+import androidx.core.view.postDelayed
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.viewpager2.widget.ViewPager2
@@ -16,6 +17,7 @@ import com.raywenderlich.videoplayerapp.adapter.ShortsAdapter
 import com.raywenderlich.videoplayerapp.databinding.FragmentShortsBinding
 import com.raywenderlich.videoplayerapp.model.Short
 import com.raywenderlich.videoplayerapp.repository.ShortsRepository
+import com.raywenderlich.videoplayerapp.utils.PlayerManager
 import com.raywenderlich.videoplayerapp.viewmodel.NavigationViewModel
 
 class ShortsFragment : Fragment() {
@@ -25,6 +27,7 @@ class ShortsFragment : Fragment() {
 
     private lateinit var shortsAdapter: ShortsAdapter
     private val shortsRepository = ShortsRepository()
+    private val playerManager = PlayerManager
 
     private val navigationViewModel: NavigationViewModel by activityViewModels()
     private var shortsList = listOf<Short>()
@@ -35,8 +38,6 @@ class ShortsFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = null
-
         _binding = FragmentShortsBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -46,7 +47,6 @@ class ShortsFragment : Fragment() {
 
         setupViewPager()
         loadShortsFromFirebase()
-
         observeNavigation()
     }
 
@@ -56,15 +56,28 @@ class ShortsFragment : Fragment() {
         shortsAdapter = ShortsAdapter(this, emptyList())
         binding.vpShorts.adapter = shortsAdapter
 
-        binding.vpShorts.offscreenPageLimit = -1
+        binding.vpShorts.offscreenPageLimit = 1
 
         binding.vpShorts.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+
+            override fun onPageScrollStateChanged(state: Int) {
+                super.onPageScrollStateChanged(state)
+
+                if (state == ViewPager2.SCROLL_STATE_DRAGGING) {
+//                    pauseVideoAtPosition(currentPosition)
+                }
+            }
+
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
 
                 if (!isAdded || _binding == null) return
 
-                pauseVideoAtPosition(currentPosition)
+                Log.d("ShortsFragment", "Page selected: $position (previous: $currentPosition)")
+
+                if (currentPosition != position) {
+                    pauseVideoAtPosition(currentPosition)
+                }
 
                 playVideoAtPosition(position)
 
@@ -76,50 +89,38 @@ class ShortsFragment : Fragment() {
     private fun playVideoAtPosition(position: Int) {
         if (!isAdded || _binding == null) return
 
-//        binding.root.postDelayed({
-//            if (!isAdded || _binding == null) return@postDelayed
-//
-//            val fragment = getFragmentAtPosition(position)
-//            if (fragment != null) {
-//                fragment.playVideo()
-//                Log.d("", "Playing video at position: $position")
-//            } else {
-//                Log.d("", "Fragment not found at position: $position")
-//
-//                binding.root.postDelayed({
-//                    if (isAdded && _binding != null) {
-//                        getFragmentAtPosition(position)?.playVideo()
-//                    }
-//                }, 300)
-//            }
-//        }, 100)
+        binding.root.post {
+            if (!isAdded || _binding == null) return@post
 
-        binding.root.post({
             val fragment = getFragmentAtPosition(position)
             if (fragment != null) {
                 fragment.playVideo()
-                Log.d("", "Playing video at position: $position")
+                Log.d("ShortsFragment", "Playing video at position: $position")
             } else {
-                Log.d("", "Fragment not found at position: $position")
+                Log.d("ShortsFragment", "Fragment not found at position: $position")
 
-//                binding.root.postDelayed({
-//                    if (isAdded && _binding != null) {
-//                        getFragmentAtPosition(position)?.playVideo()
-//                    }
-//                }, 300)
+                binding.root.postDelayed({
+                    if (isAdded && _binding != null) {
+                        getFragmentAtPosition(position)?.playVideo()
+                    }
+                }, 100)
             }
-        })
+        }
     }
 
     private fun pauseVideoAtPosition(position: Int) {
         if (!isAdded || _binding == null) return
 
         val fragment = getFragmentAtPosition(position)
-        fragment?.pauseVideo()
-        Log.d("", "Pausing video at position: $position")
+        if (fragment != null) {
+            fragment.pauseVideo()
+            Log.d("ShortsFragment", "Paused video at position: $position")
+        } else {
+            Log.d("ShortsFragment", "Fragment not found to pause at position: $position")
+        }
     }
 
-    private fun getFragmentAtPosition(position: Int) : ShortVideoFragment? {
+    private fun getFragmentAtPosition(position: Int): ShortVideoFragment? {
         if (!isAdded || _binding == null) return null
 
         val fragmentTag = "f$position"
@@ -143,20 +144,12 @@ class ShortsFragment : Fragment() {
 
                 binding.progressBar.isVisible = false
 
-                if(shorts.isEmpty()) {
-                    Toast.makeText(requireContext(), "No shorts available", Toast.LENGTH_SHORT).show()
+                if (shorts.isEmpty()) {
+                    Toast.makeText(requireContext(), "No shorts available", Toast.LENGTH_SHORT)
+                        .show()
                 } else {
                     shortsList = shorts
                     shortsAdapter.updateShorts(shortsList)
-
-//                    binding.vpShorts.post {
-//                        playVideoAtPosition(0)
-//                    }
-//                    binding.vpShorts.postDelayed({
-//                        if (isAdded && _binding != null) {
-//                            playVideoAtPosition(0)
-//                        }
-//                    }, 300)
 
                     binding.vpShorts.post({
                         if (isAdded && _binding != null) {
@@ -169,11 +162,15 @@ class ShortsFragment : Fragment() {
                 observeNavigation()
             },
             onFailure = { errorMessage ->
-                if(!isAdded || _binding == null) return@getAllShorts
+                if (!isAdded || _binding == null) return@getAllShorts
 
                 binding.progressBar.isVisible = false
 
-                Toast.makeText(requireContext(), "Error laoding shorts: $errorMessage", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Error laoding shorts: $errorMessage",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         )
     }
@@ -193,7 +190,7 @@ class ShortsFragment : Fragment() {
 
         val position = shortsList.indexOfFirst { it.id == shortId }
 
-        if(position != -1) {
+        if (position != -1) {
             binding.vpShorts.setCurrentItem(position, false)
 
 //            binding.vpShorts.post {
@@ -208,7 +205,7 @@ class ShortsFragment : Fragment() {
                     playVideoAtPosition(position)
                     currentPosition = position
                 }
-            }, 500)
+            }, 300)
         } else {
             Toast.makeText(requireContext(), "Short not found", Toast.LENGTH_SHORT).show()
         }
@@ -228,30 +225,32 @@ class ShortsFragment : Fragment() {
 
     override fun onStop() {
         super.onStop()
+//        playerManager.releasePlayer()
+        pauseVideoAtPosition(currentPosition)
     }
 
     override fun onDestroyView() {
-//        super.onDestroyView()
+        super.onDestroyView()
+
+        pauseVideoAtPosition(currentPosition)
+
+        binding.vpShorts.adapter = null
+
         _binding = null
 
         val fragmentCount = childFragmentManager.fragments.size
         Log.e("${this::class.java.simpleName}", "Fragments still alive: $fragmentCount")
-
-//        binding.vpShorts.adapter = null
-        Log.d("${this::class.java.simpleName}", "${Throwable().stackTrace[0].methodName}")
-
-        super.onDestroyView()
     }
 
     override fun onDestroy() {
-        _binding = null
+        super.onDestroy()
+
+        if (requireActivity().isFinishing) {
+            playerManager.releasePlayer()
+            Log.d("ShortsFragment", "Released PlayerManager - Activity finishing")
+        }
 
         val fragmentCount = childFragmentManager.fragments.size
-        Log.e("${this::class.java.simpleName}", "Fragments still alive: $fragmentCount")
-
-//        binding.vpShorts.adapter = null
-        Log.d("${this::class.java.simpleName}", "${Throwable().stackTrace[0].methodName}")
-
-        super.onDestroy()
+        Log.d("ShortsFragment", "onDestroy() - Fragments still alive: $fragmentCount")
     }
 }

@@ -61,19 +61,6 @@ class ShortsAdapter(
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         super.onAttachedToRecyclerView(recyclerView)
 
-        // this line will force onViewDetachedFromWindow and
-        // onViewAttachedToWindow to be called when the view
-        // is no longer visible in the window
         (recyclerView.layoutManager as LinearLayoutManager).recycleChildrenOnDetach = true
     }
-
-//
-//    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
-//        super.onAttachedToRecyclerView(recyclerView)
-//    }
-//
-//    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
-//        super.onDetachedFromRecyclerView(recyclerView)
-//        (recyclerView.layoutManager as LinearLayoutManager).recycleChildrenOnDetach = true
-//    }
 }
